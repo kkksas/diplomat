@@ -69,7 +69,7 @@ def mySel(N_clusters, cls):
     b1=farness2(N_clusters,cls)
     return np.mean((b1-a1)/np.maximum(a1,b1)) 
 
-Ks = range(2, 14)
+Ks = range(2, 12)
 Ds = []
 Ds2 = []
 ases= []
@@ -77,13 +77,22 @@ inertia = []
 for K in Ks:
  cls = KMeans(n_clusters=K, random_state=1).fit(df1)
  labels = cls.labels_
- Ds2.append(mySel(K, cls))
- Ds.append(silhouette_score(df1, labels, metric='euclidean'))
-
+ ases.append(np.mean(closeness2(K,cls)))
+ #Ds2.append(mySel(K, cls))
+ #Ds.append(silhouette_score(df1, labels, metric='euclidean'))
+ 
+"""
 plt.plot(Ks, Ds, 'o-')
 plt.plot(Ks, Ds2, 'x-')
-plt.xlabel(u'Величина K')
+plt.title('Силуэтная отметка при различном количестве кластеров')
+plt.xlabel(u'Количество кластеров')
 plt.ylabel(u'Силуэтная отметка')
+plt.legend(['Силуэт из библиотеки sklearn','Силуэт созданный вручную'])
+"""
+plt.plot(Ks, ases, 'o-')
+plt.title('Средняя связность объектов в класстере')
+plt.xlabel(u'Количество кластеров')
+plt.ylabel(u'Связность')
 plt.show()
 
 cls = KMeans(n_clusters=20, random_state=1).fit(df1)
