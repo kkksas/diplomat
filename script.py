@@ -1,9 +1,5 @@
-import pandas as pd
-import numpy as np
-df = pd.read_excel('./spreadcheek.xlsx')
-print(df['тип отдыха'])
-a = []
-for i in df['тип отдыха'].astype(str):
-    for j in i.split(','):
-        a.append(j.strip().lower())
-print(set(a))
+def splitter(path: str, keyword: str) -> str:
+    with open(path, 'r') as file:
+        content = file.read()
+    return content.split(keyword)
+splitter('./desc.txt', 'ТУР')
