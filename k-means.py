@@ -2,10 +2,12 @@ from sklearn.cluster import KMeans
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import homogeneity_completeness_v_measure
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from sklearn.metrics.pairwise import euclidean_distances
 df1 = pd.read_excel('./prav.xlsx')
+#df1.reset_index()
+#df1 = df1.drop('Unnamed: 0')
+print(df1)
 #оно дает слишком большой вклад 
 #df1['время трансфера'] = df1['время трансфера'] / 24
 """
@@ -77,24 +79,25 @@ inertia = []
 for K in Ks:
  cls = KMeans(n_clusters=K, random_state=1).fit(df1)
  labels = cls.labels_
- ases.append(np.mean(closeness2(K,cls)))
+ #ases.append(np.mean(closeness2(K,cls)))
  #Ds2.append(mySel(K, cls))
  #Ds.append(silhouette_score(df1, labels, metric='euclidean'))
- 
-"""
+ Ds.append(calinski_harabasz_score(df1, labels))
+
 plt.plot(Ks, Ds, 'o-')
-plt.plot(Ks, Ds2, 'x-')
-plt.title('Силуэтная отметка при различном количестве кластеров')
+#plt.plot(Ks, Ds2, 'x-')
+plt.title('Индекс Дэвиса-Булдина при различном количестве кластеров')
 plt.xlabel(u'Количество кластеров')
-plt.ylabel(u'Силуэтная отметка')
-plt.legend(['Силуэт из библиотеки sklearn','Силуэт созданный вручную'])
+plt.ylabel(u'Индекс Дэвиса-Булдина')
+plt.legend('Силуэт из библиотеки sklearn')
+plt.show()
 """
 plt.plot(Ks, ases, 'o-')
 plt.title('Средняя связность объектов в класстере')
 plt.xlabel(u'Количество кластеров')
 plt.ylabel(u'Связность')
-plt.show()
+
 
 cls = KMeans(n_clusters=20, random_state=1).fit(df1)
 labels = cls.labels_
-mySel(20, cls)
+mySel(20, cls)"""
