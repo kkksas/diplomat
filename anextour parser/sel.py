@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import time
 from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException, NoSuchElementException
+import re
 
 service = Service(executable_path=ChromeDriverManager().install())
 options = webdriver.ChromeOptions()
@@ -20,12 +21,30 @@ def parse_tour_page(driver, url = 'https://anextour.ru/excursion-tours/russia/zo
     #'https://anextour.ru/excursion-tours/russia/zolotaya-moskva-leto'
     driver.get(url)
     name = driver.find_element("xpath", '//main/section[1]/div/div[1]/div[1]/div/h1').text.splitlines()[1]
-    desk_time = driver.find_element("xpath", "//main//div[@class='w-full inherit-all lg:pr-68 lg:text-16 md:text-14 sm:text-14']").text.split("\n\n")
+    desk_time = driver.find_element("xpath", "//main//div[@class='w-full inherit-all lg:pr-68 lg:text-16 md:text-14 sm:text-14']").text.strip()
+    desk_time = re.split(r"(?:\r?\n){1,}", desk_time)
+    if len(desk_time)>2:
+        haha = 1
     includes = []
     for i in driver.find_elements("xpath", "//main//div[@class='pb-16']//ul/li/div//h3"):
         includes.append(i.text)
     path = []
+    try:
+        driver.find_element("xpath", "//main//section[contains(.,'Маршрут тура')]/div[2]//button").click()
+    except NoSuchElementException:
+        print('all info displayed')   
     path.append(driver.find_element("xpath", "//main//div[@class='wysiwyg-pointsList']").text)
+    
+    
+    try:
+        driver.find_element("xpath", "//main//section[contains(.,'Маршрут тура')]//div[@id = ':rqt:']/div[2]/button").click()
+        btn = driver.find_elements("xpath", "//main//section[contains(.,'Маршрут тура')]//div[@id = ':rqt:']/div[3]/div/div[2]//button")
+        for i in btn[1:]:
+            i.click()
+            path.append(driver.find_element("xpath", "//main//div[@class='wysiwyg-pointsList']").text)
+    except NoSuchElementException:
+        print("there is one date variant")
+    
     try:
         path_variant_but = driver.find_elements("xpath", "//main/section[2]/div[1]//li/label[@gtm-label='false']")   
         for i in path_variant_but:
@@ -33,9 +52,13 @@ def parse_tour_page(driver, url = 'https://anextour.ru/excursion-tours/russia/zo
             path.append(driver.find_element("xpath", "//main//div[@class='wysiwyg-pointsList']").text)
     except NoSuchElementException:
         print('there only one way')
-         
+    output = []
+    for i in path:
+        i.replace('\n',' ')
+        output.append([name, desk_time[0], desk_time[1], includes, i])
+
     #driver.execute_script("window.history.go(-1)")
-    return [name, *desk_time, includes, path]
+    return output
 
 
 
@@ -54,7 +77,7 @@ tour_cards = driver.find_elements("xpath", "//li/a[@gtm-label= 'card']")
 links = [elem.get_attribute('href') for elem in tour_cards] 
 data = []
 for i in links:    
-    data.append(parse_tour_page(driver, i))
+    data.extend(parse_tour_page(driver, i))
 
 
 df = pd.DataFrame(data)
