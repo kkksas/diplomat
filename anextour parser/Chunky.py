@@ -31,10 +31,10 @@ def chunky_hard_coded_overlap(x):
     return texts
 
  
-texts = df.apply(chunky_hard_coded_overlap, axis=1)
+texts = df.apply(chunky, axis=1)
 chunks = []
 for i in texts:
     for j in i:
         chunks.append([*df.iloc[j.metadata['source_id']][:5], j.page_content])
 df1 = pd.DataFrame(chunks)
-df1.to_excel("chunked1.xlsx", index= False)
+df1.to_excel("chunked.xlsx", index= False)
