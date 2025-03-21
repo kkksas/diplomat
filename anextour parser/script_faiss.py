@@ -3,12 +3,34 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.retrievers import BM25Retriever, EnsembleRetriever
 from langchain.vectorstores.faiss import FAISS
 from langchain_core.documents import Document
-
+import string
 import time
 import re
 import pandas as pd
 import numpy as np
 import matplotlib
+K_c = 5
+dataset_num = 3
+is_metric_type_mine = False #переключает метрику True acc_top False - acc_buttom
+
+
+def acc_t(x):
+    a = list(pd.Series(x['ret_chunks']).isin(x['relv']).dropna()) 
+    return sum(a)/len(a)   
+
+def acc_top(qds) -> float:
+    #for each elem in qds: (['ret_chunks']{"25", "23", "105"}, ['relv']{"25", "23", "1","2", "3", "4"} =>{True, True, false} => return mean {0.67})
+    a = qds.apply(acc_t, axis = 1)
+    s = 1
+    return a
+
+def acc_buttom(qds) -> float:
+    #for each elem in qds: (['ret_chunks']{"25", "23", "105"}, ['relv']{"25", "23", "1","2", "3", "4"} =>{True, True, false} => True)
+    #mean(по всем элементам qds)
+    a = qds.apply(lambda x: pd.Series(x['ret_chunks']).isin(x['relv']), axis = 1)
+    a = np.sum(a, axis = 1).astype(bool)
+    return a.astype(int)
+
 
 from typing import Any, Coroutine, List
 class HuggingFaceE5Embeddings(HuggingFaceEmbeddings):
@@ -30,9 +52,7 @@ class HuggingFaceE5Embeddings(HuggingFaceEmbeddings):
         texts = [f"passage: {text}" for text in texts]
         return await super().aembed_documents(texts)
 
-K_c = 5
-dataset_num = 2
-is_metric_type_mine = True #переключает метрику True acc_top False - acc_buttom
+
 cds = pd.read_excel('chunked.xlsx', usecols=['id','context']).dropna()
 qds = pd.read_csv(f'./ds{dataset_num}.csv', dtype=str, sep=';' )
 qds['relv'] = qds['relv'].apply(lambda x: list(map(int, x.split(','))))
@@ -50,7 +70,9 @@ documents = []
 for i in cds.iloc:
     documents.append(Document(page_content=i['context'], metadata = {"id":i['id']}))
 
-s_time = time.time()   
+s_time = time.time() 
+
+#######___faiss___#########################
 emb = HuggingFaceE5Embeddings(model_name="intfloat/multilingual-e5-large-instruct")
 #загрузить эмбы
 faiss_db = FAISS.load_local("index", embeddings=emb, allow_dangerous_deserialization=True)
@@ -59,20 +81,6 @@ faiss_db = FAISS.load_local("index", embeddings=emb, allow_dangerous_deserializa
 #faiss_db.save_local("index")
 end_time =time.time()   
 print("faiss_db_spended:", end_time-s_time)
-
-def acc_top(qds) -> float:
-    #for each elem in qds: (['ret_chunks']{"25", "23", "105"}, ['relv']{"25", "23", "1","2", "3", "4"} =>{True, True, false} => return mean {0.67})
-    a = qds.apply(lambda x: pd.Series(x['ret_chunks']).isin(x['relv']), axis = 1)
-    s = 1
-    return np.sum(a, axis=1)/a.shape[1]
-
-def acc_buttom(qds) -> float:
-    #for each elem in qds: (['ret_chunks']{"25", "23", "105"}, ['relv']{"25", "23", "1","2", "3", "4"} =>{True, True, false} => True)
-    #mean(по всем элементам qds)
-    a = qds.apply(lambda x: pd.Series(x['ret_chunks']).isin(x['relv']), axis = 1)
-    a = np.sum(a, axis = 1).astype(bool)
-    return a.astype(int)
-
 
 #res = qds[qds['relv'].apply(len)>1]
 res = qds
@@ -84,26 +92,50 @@ for k_c in range(K_c):
     else:
         res['accB'+str(k_c+1)] = acc_buttom(res)
 
-
-#тут результат лучше, почему 2 вариант: 
-# 1) куча похожих туров, не указаных как релевантные
-# за позицию: 20-21 вопросы имеют мало вхождений(по москве 2 по карелии 19) и они имеют хорошие результаты Москва - 100 Карелия - 60 по теме и 100 по региону 
-# 2) при большем количестве туров, указаных как релевантные, легче попасть случайно
-# за позицию: наиболее логично, если не 1
-# P. S. кажется что регион лучше угадывает(сложно тк у 1 тура мб несколько регионов до 5-6)
-
-
-
-
-#acur = acc_top(qds)     
-#print(res['acc'])
-#print('mean res:',np.mean(res['acc']))
 if is_metric_type_mine:
-    res.to_excel(f'qds{dataset_num}_res.xlsx', index=False)
+    res.to_excel(f'results/faiss/qds{dataset_num}_res.xlsx', index=False)
 else:
-    res.to_excel(f'qds{dataset_num}_res_alt.xlsx', index=False) 
+    res.to_excel(f'results/faiss/qds{dataset_num}_res_alt.xlsx', index=False) 
+
+
 end_time =time.time()   
 print("total_spended:", end_time-s_time)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 """
 видимо это построение эмбедингов(в лоб)
