@@ -105,16 +105,16 @@ for dataset_num in range(1,dataset_cap+1):
 
         )   
         res_ass['ret_chunks'] = res_ass["question"].apply(lambda x: list(elem.metadata['id'] for elem in ensemble_retriever.invoke(x)))
-        res_ass['ret_chunks'] = res_ass['ret_chunks'].apply(lambda x: x[:k_c+1])
+#        res_ass['ret_chunks'] = res_ass['ret_chunks'].apply(lambda x: x[:k_c+1])# обрезает ret_chunks до k_c
         if is_metric_type_mine:
             res_ass['acc'+str(k_c+1)] = acc_top(res_ass)
         else:
             res_ass['accB'+str(k_c+1)] = acc_buttom(res_ass)
 
     if is_metric_type_mine:
-        res_ass.to_excel(f'results/asmbl/qds{dataset_num}_res_assmbl_90-10.xlsx', index=False)
+        res_ass.to_excel(f'results/asmbl/dont_cut/qds{dataset_num}_res_assmbl_90-10.xlsx', index=False)
     else:
-        res_ass.to_excel(f'results/asmbl/qds{dataset_num}_res_alt_assmbl_90-10.xlsx', index=False) 
+        res_ass.to_excel(f'results/asmbl/dont_cut/qds{dataset_num}_res_alt_assmbl_90-10.xlsx', index=False) 
 
 end_time =time.time()   
 print("total_spended:", end_time-s_time)

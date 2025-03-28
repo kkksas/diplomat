@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib
 K_c = 5
 dataset_num = 3
-is_metric_type_mine = False #переключает метрику True acc_top False - acc_buttom
+is_metric_type_mine = True #переключает метрику True acc_top False - acc_buttom
 
 
 def acc_t(x):

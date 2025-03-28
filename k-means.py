@@ -1,4 +1,4 @@
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, AgglomerativeClustering, DBSCAN
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -71,26 +71,52 @@ def mySel(N_clusters, cls):
     b1=farness2(N_clusters,cls)
     return np.mean((b1-a1)/np.maximum(a1,b1)) 
 
-Ks = range(2, 12)
+Ks = []
 Ds = []
 Ds2 = []
+Ds3 = []
 ases= []
 inertia = []
-for K in Ks:
- cls = KMeans(n_clusters=K, random_state=1).fit(df1)
- labels = cls.labels_
- #ases.append(np.mean(closeness2(K,cls)))
- #Ds2.append(mySel(K, cls))
- #Ds.append(silhouette_score(df1, labels, metric='euclidean'))
- Ds.append(calinski_harabasz_score(df1, labels))
+for K in np.linspace(1.8,10,40):
+    cls = DBSCAN(eps=K).fit(df1)
+    labels = np.array(cls.labels_)
+    labels = labels[labels!=-1]
+    Ks.append(len(set(labels)))
+    Ds.append(silhouette_score(df1, cls.labels_, metric='euclidean'))
+    Ds2.append(davies_bouldin_score(df1, cls.labels_))
+    Ds3.append(calinski_harabasz_score(df1, cls.labels_))
 
-plt.plot(Ks, Ds, 'o-')
+df1 = pd.DataFrame({'ks':Ks, 'ds':Ds})
+df1 = df1.groupby('ks').max()
+df2 = pd.DataFrame({'ks':Ks, 'ds':Ds2})
+df2 = df2.groupby('ks').min()
+df3 = pd.DataFrame({'ks':Ks,'ds':Ds3})
+df3 = df3.groupby('ks').max()
+
+
+plt.subplot(1, 3, 1)
+plt.plot(df1.index, df1['ds'], 'o-')
 #plt.plot(Ks, Ds2, 'x-')
-plt.title('Индекс Дэвиса-Булдина при различном количестве кластеров')
-plt.xlabel(u'Количество кластеров')
-plt.ylabel(u'Индекс Дэвиса-Булдина')
-plt.legend('Силуэт из библиотеки sklearn')
+plt.title('Коэффициент силуэта \n при различном количестве кластеров', fontsize=16)
+plt.xlabel(u'Количество кластеров',fontsize=14)
+plt.ylabel(u'Коэффициент силуэта',fontsize=14)
+
+plt.subplot(1, 3, 2)
+plt.plot(df1.index, df2['ds'], 'o-')
+#plt.plot(Ks, Ds2, 'x-')
+plt.title('Индекс Дэвиса-Булдина \n при различном количестве кластеров',fontsize=16)
+plt.xlabel(u'Количество кластеров',fontsize=14)
+plt.ylabel(u'Индекс Дэвиса-Булдина',fontsize=14)
+
+plt.subplot(1, 3, 3)
+plt.plot(df1.index, df2['ds'], 'o-')
+#plt.plot(Ks, Ds2, 'x-')
+plt.title('Индекс Калинского-Харабаша \n при различном количестве кластеров',fontsize=16)
+plt.xlabel(u'Количество кластеров',fontsize=14)
+plt.ylabel(u'Индекс Калинского-Харабаша',fontsize=14)
 plt.show()
+
+
 """
 plt.plot(Ks, ases, 'o-')
 plt.title('Средняя связность объектов в класстере')
