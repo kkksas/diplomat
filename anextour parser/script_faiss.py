@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib
 K_c = 5
 dataset_num = 3
-is_metric_type_mine = True #переключает метрику True acc_top False - acc_buttom
+is_metric_type_mine = False #переключает метрику True acc_top False - acc_buttom
 
 
 def acc_t(x):
@@ -93,29 +93,13 @@ for k_c in range(K_c):
         res['accB'+str(k_c+1)] = acc_buttom(res)
 
 if is_metric_type_mine:
-    res.to_excel(f'results/faiss/qds{dataset_num}_res.xlsx', index=False)
+    res.to_excel(f'res_sbert/faiss/qds{dataset_num}_res.xlsx', index=False)
 else:
-    res.to_excel(f'results/faiss/qds{dataset_num}_res_alt.xlsx', index=False) 
+    res.to_excel(f'res_sbert/faiss/qds{dataset_num}_res_alt.xlsx', index=False) 
 
 
 end_time =time.time()   
 print("total_spended:", end_time-s_time)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

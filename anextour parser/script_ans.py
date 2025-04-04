@@ -91,30 +91,32 @@ bm25_retriever = BM25Retriever.from_documents(
     documents=documents,
     preprocess_func=tokenize
 )
-for dataset_num in range(1,dataset_cap+1):   
-    qds = pd.read_csv(f'./ds{dataset_num}.csv', dtype=str, sep=';' )
-    qds['relv'] = qds['relv'].apply(lambda x: list(map(int, x.split(','))))
-    res_ass = qds
-    for k_c in range(K_c):
-        retriever = faiss_db.as_retriever(search_kwargs={"k": k_c+1})
-        bm25_retriever.k = k_c+1
-        ensemble_retriever = EnsembleRetriever(
-            retrievers=[retriever, bm25_retriever],
-            weights=[0.9, 0.1],
-            tags=['faiss', 'bm25']
+koefs = [[40, 60],[70,30],[80,20],[90,10]]
+for koef in koefs:
+    for dataset_num in range(1,dataset_cap+1):   
+        qds = pd.read_csv(f'./ds{dataset_num}.csv', dtype=str, sep=';' )
+        qds['relv'] = qds['relv'].apply(lambda x: list(map(int, x.split(','))))
+        res_ass = qds
+        for k_c in range(K_c):
+            retriever = faiss_db.as_retriever(search_kwargs={"k": k_c+1})
+            bm25_retriever.k = k_c+1
+            ensemble_retriever = EnsembleRetriever(
+                retrievers=[retriever, bm25_retriever],
+                weights=[koef[0]*0.01, koef[1]*0.01],
+                tags=['faiss', 'bm25']
 
-        )   
-        res_ass['ret_chunks'] = res_ass["question"].apply(lambda x: list(elem.metadata['id'] for elem in ensemble_retriever.invoke(x)))
-#        res_ass['ret_chunks'] = res_ass['ret_chunks'].apply(lambda x: x[:k_c+1])# обрезает ret_chunks до k_c
+            )
+            res_ass['ret_chunks'] = res_ass["question"].apply(lambda x: list(elem.metadata['id'] for elem in ensemble_retriever.invoke(x)))
+            res_ass['ret_chunks'] = res_ass['ret_chunks'].apply(lambda x: x[:k_c+1])# обрезает ret_chunks до k_c
+            if is_metric_type_mine:
+                res_ass['acc'+str(k_c+1)] = acc_top(res_ass)
+            else:
+                res_ass['accB'+str(k_c+1)] = acc_buttom(res_ass)
+
         if is_metric_type_mine:
-            res_ass['acc'+str(k_c+1)] = acc_top(res_ass)
+            res_ass.to_excel(f'results/asmbl/qds{dataset_num}_res_assmbl_{koef[0]}-{koef[1]}.xlsx', index=False)
         else:
-            res_ass['accB'+str(k_c+1)] = acc_buttom(res_ass)
-
-    if is_metric_type_mine:
-        res_ass.to_excel(f'results/asmbl/dont_cut/qds{dataset_num}_res_assmbl_90-10.xlsx', index=False)
-    else:
-        res_ass.to_excel(f'results/asmbl/dont_cut/qds{dataset_num}_res_alt_assmbl_90-10.xlsx', index=False) 
+            res_ass.to_excel(f'results/asmbl/qds{dataset_num}_res_alt_assmbl_{koef[0]}-{koef[1]}.xlsx', index=False) 
 
 end_time =time.time()   
 print("total_spended:", end_time-s_time)
