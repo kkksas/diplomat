@@ -14,8 +14,14 @@ options.add_argument(r"user-data-dir=C:\\Users\\kosty\AppData\\Local\\Google\\Ch
 options.add_argument('--ignore-certificate-errors')
 options.add_argument('--ignore-ssl-errors')
 driver = webdriver.Chrome(service=service, options=options)
+img_links = [] 
+driver.get(f'https://plant.depo.msu.ru/open/public/search?searchBy=any&queryString=sorbaria%20sorbifolia')
+for collection_item in driver.find_elements(By.XPATH, "//img[@class='img-responsive']"):
+    img_links.append(collection_item.get_attribute("src"))
+driver.quit()
+print(img_links)
 
-
+"""
 
 def parse_tour_page(driver, url = 'https://anextour.ru/excursion-tours/russia/zolotaya-moskva-leto'):
     #'https://anextour.ru/excursion-tours/russia/zolotaya-moskva-leto'
@@ -85,7 +91,7 @@ print(df)
 df.to_excel('parsed.xlsx')
 
 driver.quit()
-
+"""
 
 
 

@@ -1,16 +1,14 @@
 
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.retrievers import BM25Retriever, EnsembleRetriever
 from langchain.vectorstores.faiss import FAISS
 from langchain_core.documents import Document
-import string
 import time
-import re
 import pandas as pd
 import numpy as np
 import matplotlib
+from transformers import AutoModel
 K_c = 5
-dataset_num = 3
+dataset_cap = 3
 is_metric_type_mine = False #переключает метрику True acc_top False - acc_buttom
 
 
@@ -54,8 +52,8 @@ class HuggingFaceE5Embeddings(HuggingFaceEmbeddings):
 
 
 cds = pd.read_excel('chunked.xlsx', usecols=['id','context']).dropna()
-qds = pd.read_csv(f'./ds{dataset_num}.csv', dtype=str, sep=';' )
-qds['relv'] = qds['relv'].apply(lambda x: list(map(int, x.split(','))))
+# qds = pd.read_csv(f'./ds{dataset_num}.csv', dtype=str, sep=';' )
+# qds['relv'] = qds['relv'].apply(lambda x: list(map(int, x.split(','))))
 #не оч понял, что подразумевается под контекстом в qds, видимо это чанки подходящих под вопрос описаний туров(в моем случае)
 #не проще ли тогда считать точность по id описания к которому чанк принадлежит
 
@@ -73,29 +71,36 @@ for i in cds.iloc:
 s_time = time.time() 
 
 #######___faiss___#########################
-emb = HuggingFaceE5Embeddings(model_name="intfloat/multilingual-e5-large-instruct")
+
+model = AutoModel.from_pretrained("ai-sage/Giga-Embeddings-instruct",trust_remote_code=True)
+model_kwargs = {'device': 'cuda'} 
+emb = HuggingFaceE5Embeddings(model_name="ai-sage/Giga-Embeddings-instruct", model_kwargs = {'device': 'cuda'} )
 #загрузить эмбы
-faiss_db = FAISS.load_local("index", embeddings=emb, allow_dangerous_deserialization=True)
+#faiss_db = FAISS.load_local("index", embeddings=emb, allow_dangerous_deserialization=True)
 #переделать эмбы
-#faiss_db = FAISS.from_documents(documents, embedding=emb)
-#faiss_db.save_local("index")
+print('ems')
+faiss_db = FAISS.from_documents(documents, embedding=emb)
+faiss_db.save_local("index_gigachat")
 end_time =time.time()   
 print("faiss_db_spended:", end_time-s_time)
 
 #res = qds[qds['relv'].apply(len)>1]
-res = qds
-for k_c in range(K_c):
-    retriever = faiss_db.as_retriever(search_kwargs={"k": k_c+1})
-    res['ret_chunks'] = res["question"].apply(lambda x: list(elem.metadata['id'] for elem in retriever.invoke(x)))   
-    if is_metric_type_mine:
-        res['acc'+str(k_c+1)] = acc_top(res)
-    else:
-        res['accB'+str(k_c+1)] = acc_buttom(res)
+for dataset_num in range(1,dataset_cap+1):
+    qds = pd.read_csv(f'./ds{dataset_num}.csv', dtype=str, sep=';' )
+    qds['relv'] = qds['relv'].apply(lambda x: list(map(int, x.split(','))))
+    res = qds
+    for k_c in range(K_c):
+        retriever = faiss_db.as_retriever(search_kwargs={"k": k_c+1})
+        res['ret_chunks'] = res["question"].apply(lambda x: list(elem.metadata['id'] for elem in retriever.invoke(x)))   
+        if is_metric_type_mine:
+            res['acc'+str(k_c+1)] = acc_top(res)
+        else:
+            res['accB'+str(k_c+1)] = acc_buttom(res)
 
-if is_metric_type_mine:
-    res.to_excel(f'res_sbert/faiss/qds{dataset_num}_res.xlsx', index=False)
-else:
-    res.to_excel(f'res_sbert/faiss/qds{dataset_num}_res_alt.xlsx', index=False) 
+    if is_metric_type_mine:
+        res.to_excel(f'res_sbert/faiss/qds{dataset_num}_res.xlsx', index=False)
+    else:
+        res.to_excel(f'res_sbert/faiss/qds{dataset_num}_res_alt.xlsx', index=False) 
 
 
 end_time =time.time()   
