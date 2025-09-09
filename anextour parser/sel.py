@@ -14,14 +14,12 @@ options.add_argument(r"user-data-dir=C:\\Users\\kosty\AppData\\Local\\Google\\Ch
 options.add_argument('--ignore-certificate-errors')
 options.add_argument('--ignore-ssl-errors')
 driver = webdriver.Chrome(service=service, options=options)
-img_links = [] 
-driver.get(f'https://plant.depo.msu.ru/open/public/search?searchBy=any&queryString=sorbaria%20sorbifolia')
-for collection_item in driver.find_elements(By.XPATH, "//img[@class='img-responsive']"):
-    img_links.append(collection_item.get_attribute("src"))
-driver.quit()
-print(img_links)
-
-"""
+# img_links = [] 
+# driver.get(f'https://plant.depo.msu.ru/open/public/search?searchBy=any&queryString=sorbaria%20sorbifolia')
+# for collection_item in driver.find_elements(By.XPATH, "//img[@class='img-responsive']"):
+#     img_links.append(collection_item.get_attribute("src"))
+# driver.quit()
+# print(img_links)
 
 def parse_tour_page(driver, url = 'https://anextour.ru/excursion-tours/russia/zolotaya-moskva-leto'):
     #'https://anextour.ru/excursion-tours/russia/zolotaya-moskva-leto'
@@ -68,17 +66,22 @@ def parse_tour_page(driver, url = 'https://anextour.ru/excursion-tours/russia/zo
 
 
 
-driver.get('https://anextour.ru/excursion-tours/russia')
-bottom_botton = driver.find_element("xpath", "//button[contains(.,'Смотреть ещё')]")
-while True:
-    try:
-        bottom_botton.click()
-        time.sleep(0.5)
-    except StaleElementReferenceException:
-        break
-    except ElementClickInterceptedException:
-        time.sleep(2)
-        bottom_botton.click()
+driver.get('https://anextour.ru/excursion-tours/france')
+try:
+    bottom_botton = driver.find_element("xpath", "//button[contains(.,'Смотреть ещё')]")
+    while True:
+        try:
+            bottom_botton.click()
+            time.sleep(2)
+        except StaleElementReferenceException:
+            break
+        except ElementClickInterceptedException:
+            time.sleep(4)
+            bottom_botton.click()
+except NoSuchElementException:
+    a=1
+
+
 tour_cards = driver.find_elements("xpath", "//li/a[@gtm-label= 'card']")
 links = [elem.get_attribute('href') for elem in tour_cards] 
 data = []
@@ -88,10 +91,10 @@ for i in links:
 
 df = pd.DataFrame(data)
 print(df)
-df.to_excel('parsed.xlsx')
+df.to_excel('parsed_france.xlsx')
 
 driver.quit()
-"""
+
 
 
 
