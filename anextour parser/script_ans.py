@@ -104,7 +104,6 @@ for koef in koefs:
                 retrievers=[retriever, bm25_retriever],
                 weights=[koef[0]*0.01, koef[1]*0.01],
                 tags=['faiss', 'bm25']
-
             )
             res_ass['ret_chunks'] = res_ass["question"].apply(lambda x: list(elem.metadata['id'] for elem in ensemble_retriever.invoke(x)))
             res_ass['ret_chunks'] = res_ass['ret_chunks'].apply(lambda x: x[:k_c+1])# обрезает ret_chunks до k_c

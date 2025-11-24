@@ -1,8 +1,5 @@
-
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.retrievers import BM25Retriever, EnsembleRetriever
-from langchain.vectorstores.faiss import FAISS
-from langchain.vectorstores import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores.chroma import Chroma
 from langchain_core.documents import Document
 from transformers import AutoModel
 import time
@@ -10,8 +7,8 @@ import re
 import pandas as pd
 import numpy as np
 import matplotlib
-K_c = 5
-dataset_cap = 3
+K_c = 10
+dataset_cap = 4
 is_metric_type_mine = True
 query_addon = "Дан вопрос, необходимо найти абзац текста с ответом \nвопрос:"
 def acc_t(x):
@@ -57,9 +54,10 @@ def create_emb(emb):
     documents = []
     for i in cds.iloc:
         documents.append(Document(page_content=i['context'], metadata = {"id":int(i['id'])}))
-    chroma_db = Chroma.from_documents(documents, emb, persist_directory='./chromadb_sb')
+    chroma_db = Chroma.from_documents(documents, emb, persist_directory='./chromadb_new', collection_name='v_russ')
     chroma_db.persist()
     return chroma_db
+
 qds = pd.DataFrame()
 for dataset_num in range(dataset_cap):   
     new_ds = pd.read_csv(f'./ds{dataset_num+1}.csv', dtype=str, sep=';', usecols=['question'])
@@ -78,31 +76,32 @@ s_time = time.time()
 
 #######___faiss___#########################
 # model = AutoModel.from_pretrained("ai-sage/Giga-Embeddings-instruct",trust_remote_code=True)
-# model_kwargs = {'device': 'cuda'} 
-emb = HuggingFaceE5Embeddings(model_name="intfloat/multilingual-e5-large-instruct")#intfloat/multilingual-e5-large-instruct, ai-sage/Giga-Embeddings-instruct
+model_kwargs = {'device': 'cuda'} 
+emb = HuggingFaceE5Embeddings(model_name="intfloat/multilingual-e5-large-instruct", model_kwargs=model_kwargs)#intfloat/multilingual-e5-large-instruct, ai-sage/Giga-Embeddings-instruct
 #загрузить эмбы
 chroma_db = Chroma(persist_directory='./chromadb', embedding_function=emb)
 #переделать эмбы
-#chroma_db = create_emb(emb)
+# chroma_db = create_emb(emb)
 
 end_time =time.time()   
 print("chroma_db_spended:", end_time-s_time)
-for dataset_num in range(1,dataset_cap+1):
-    qds = pd.read_csv(f'./ds{dataset_num}.csv', dtype=str, sep=';' )
+for dataset_num in range(1,5):
+    qds = pd.read_csv(f'./new_ds{dataset_num}.csv', dtype=str, sep=';' ).dropna()
     qds['relv'] = qds['relv'].apply(lambda x: list(map(int, x.split(','))))
+
     res = qds
     for k_c in range(K_c):
         #retriever = chroma_db.as_retriever(search_kwargs={"k": k_c+1})
-        res['ret_chunks'] = res["question"].apply(lambda x: list(elem.metadata['id'] for elem in chroma_db.similarity_search(query_addon+x, k=k_c+1)))   
+        res['ret_chunks'] = res["question"].apply(lambda x: list(elem.metadata['id'] for elem in chroma_db.similarity_search(x, k=k_c+1)))   
         if is_metric_type_mine:
             res['acc'+str(k_c+1)] = acc_top(res)
         else:
             res['accB'+str(k_c+1)] = acc_buttom(res)
 
     if is_metric_type_mine:
-        res.to_excel(f'results/faiss_cosine/qds{dataset_num}_res.xlsx', index=False)
+        res.to_excel(f'results/new/qds{dataset_num}_res_v3.xlsx', index=False)
     else:
-        res.to_excel(f'results/faiss_cosine/qds{dataset_num}_res_alt.xlsx', index=False) 
+        res.to_excel(f'results/new/qds{dataset_num}_res_alt_v3.xlsx', index=False) 
 
 
 def sim_search_with_thresh(query, k = 5, thresh=-1):

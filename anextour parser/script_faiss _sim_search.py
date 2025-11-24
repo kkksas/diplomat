@@ -1,7 +1,7 @@
 
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.retrievers import BM25Retriever, EnsembleRetriever
-from langchain.vectorstores.faiss import FAISS
+from langchain_community.retrievers import BM25Retriever, EnsembleRetriever
+from langchain_community import FAISS
 from langchain_core.documents import Document
 import string
 import time

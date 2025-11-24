@@ -48,8 +48,8 @@ def create_emb(collection, emb):
     return collection
 import chromadb.utils.embedding_functions as embedding_functions
 huggingface_ef = embedding_functions.HuggingFaceEmbeddingFunction(
-    api_key=,
-    #model_name="intfloat/multilingual-e5-large-instruct"
+
+    model_name="intfloat/multilingual-e5-large-instruct"
 )
 #emb = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large-instruct")
 
