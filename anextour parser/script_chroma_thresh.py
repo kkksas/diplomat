@@ -49,12 +49,12 @@ class HuggingFaceE5Embeddings(HuggingFaceEmbeddings):
         return await super().aembed_documents(texts)
 
 def create_emb(emb):
-    cds = pd.read_excel('chunked.xlsx', usecols=['id','context']).dropna()
+    cds = pd.read_excel('chunked_all.xlsx', usecols=['id','context']).dropna()
     cds['len_c'] = cds['context'].apply(lambda x: len(x))
     documents = []
     for i in cds.iloc:
         documents.append(Document(page_content=i['context'], metadata = {"id":int(i['id'])}))
-    chroma_db = Chroma.from_documents(documents, emb, persist_directory='./chromadb_new', collection_name='v_russ')
+    chroma_db = Chroma.from_documents(documents, emb, persist_directory='./chromadb_new2', collection_name='v_russ')
     chroma_db.persist()
     return chroma_db
 
@@ -90,9 +90,9 @@ s_time = time.time()
 model_kwargs = {'device': 'cuda'} 
 emb = HuggingFaceE5Embeddings(model_name="intfloat/multilingual-e5-large-instruct", model_kwargs=model_kwargs)#intfloat/multilingual-e5-large-instruct, ai-sage/Giga-Embeddings-instruct
 #загрузить эмбы
-chroma_db = Chroma(persist_directory='./chromadb', embedding_function=emb)
+# chroma_db = Chroma(persist_directory='./chromadb', embedding_function=emb)
 #переделать эмбы
-# chroma_db = create_emb(emb)
+chroma_db = create_emb(emb)
 
 end_time =time.time()   
 print("chroma_db_spended:", end_time-s_time)

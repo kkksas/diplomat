@@ -40,9 +40,9 @@ def create_emb(emb):
     chroma_db.persist()
     return chroma_db
 
-def sim_search_with_thresh(query, k = 5, thresh=-1):
+def sim_search_with_thresh(query,  ensemble_retriever, k = 5, thresh=-1):
     #res = chroma_db.similarity_search_with_score(query, k = k, score_threshold=thresh)#0.3 is ok
-    res = chroma_db.similarity_search_with_relevance_scores(query, k = k, score_threshold = thresh)
+    res = ensemble_retriever.invoke(query, k = k, score_threshold = thresh)
     ret_chunks=[]
     score = []
     for elem in res:
@@ -77,9 +77,7 @@ def tokenize(s: str) -> list[str]:
     return s.lower().translate(str.maketrans("", "", string.punctuation)).split(" ")
 def get_docs():
     cds = pd.read_excel('chunked.xlsx', usecols=['id','context']).dropna()
-
     cds['len_c'] = cds['context'].apply(lambda x: len(x))
-
     documents = []
     for i in cds.iloc:
         documents.append(Document(page_content=i['context'], metadata = {"id":i['id']}))
@@ -109,7 +107,7 @@ for k_c in range(1, K_c+1):
     for q in questions:
         res = []
         for thresh in threshs:
-            _, ret_chunks, score = sim_search_with_thresh(q, k_c, thresh)
+            _, ret_chunks, score = sim_search_with_thresh(q, ensemble_retriever, k_c, thresh)
             res.append(len(ret_chunks)/k_c)
         full_res.append(res)
     result = pd.DataFrame(full_res, index=questions, columns=threshs)

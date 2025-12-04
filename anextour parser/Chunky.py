@@ -37,4 +37,4 @@ for i in texts:
     for j in i:
         chunks.append([*df.iloc[j.metadata['source_id']][:5], j.page_content])
 df1 = pd.DataFrame(chunks)
-df1.to_excel("chunked.xlsx", index= False)
+df1.to_excel("chunked_all.xlsx", index= False)
